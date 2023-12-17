@@ -4,6 +4,7 @@
 
 namespace Microsoft.Azure.Cosmos.Samples.Bulk
 {
+    using CosmosDb;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -23,14 +24,16 @@ namespace Microsoft.Azure.Cosmos.Samples.Bulk
     {
         private const string EndpointUrl = "https://<your-account>.documents.azure.com:443/";
         private const string AuthorizationKey = "<your-account-key like VxTxu70Mn4OksQLqzs>";
-        private const string DatabaseName = "bulk-tutorial";
-        private const string ContainerName = "items";
-        private const string partitionKey = "/partitionKey";
+        private const string DatabaseName = "medicine";
+        private const string ContainerName = "Items";
+        private const string partitionKey = "/id";
         private const int AmountToInsert = 300000;
 
 
         static async Task Main(string[] args)
         {
+            //CosmosService s=new CosmosService();//this also can be used as alternative way
+            //await s.TestCreateDbContainerAddDataRetrieveFullFlow();
             // <CreateClient>
             CosmosClient cosmosClient = new CosmosClient(EndpointUrl, AuthorizationKey, new CosmosClientOptions() { AllowBulkExecution = true });
             // </CreateClient>
@@ -43,18 +46,22 @@ namespace Microsoft.Azure.Cosmos.Samples.Bulk
             // <Initialize>
             Database database = await cosmosClient.CreateDatabaseIfNotExistsAsync(Program.DatabaseName);
 
-            if (database.GetContainer(Program.ContainerName) == null)
-                await database.DefineContainer(Program.ContainerName, partitionKey)
-                        .WithIndexingPolicy()
-                            .WithIndexingMode(IndexingMode.Consistent)
-                            .WithIncludedPaths()
-                                .Attach()
-                            .WithExcludedPaths()
-                                .Path("/*")
-                                .Attach()
-                        .Attach()
-                    .CreateAsync(50000);
+            //if (database.GetContainer(Program.ContainerName) == null)//this is not right,check different way
+            //await database.DefineContainer(Program.ContainerName, partitionKey)
+            //           .WithIndexingPolicy()
+            //               .WithIndexingMode(IndexingMode.Consistent)
+            //               .WithIncludedPaths()
+            //                   .Attach()
+            //               .WithExcludedPaths()
+            //                   .Path("/*")
+            //                   .Attach()
+            //           .Attach()
+            //       .CreateAsync(50000);
 
+            //for free serverless versions throughput shouldnot be passed,so taken out for generic way...so above commented & using below
+            Container container = await database.CreateContainerIfNotExistsAsync(
+         Program.ContainerName, partitionKey
+      );
             // </Initialize>
 
             try
@@ -63,7 +70,7 @@ namespace Microsoft.Azure.Cosmos.Samples.Bulk
                 Console.WriteLine($"Preparing {AmountToInsert} items to insert...");
                 // <Operations>
                 //IReadOnlyCollection<Item> itemsToInsert = Program.GetItemsToInsert();
-                IReadOnlyCollection<Item> itemsToInsert = ReadExcelData<Item>(filePath: @"C:\Users\Madhusudhan\Downloads\Max\4 - Copy.xlsx");
+                IReadOnlyCollection<Item> itemsToInsert = ReadExcelData<Item>(filePath: @"C:\Users\Madhusudhan\Downloads\Max\4.xlsx");
 
                 // </Operations>
 
@@ -71,29 +78,33 @@ namespace Microsoft.Azure.Cosmos.Samples.Bulk
                 Console.WriteLine($"Starting...");
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 // <ConcurrentTasks>
-                Container container = database.GetContainer(ContainerName);
+                //Container container = database.GetContainer(ContainerName);
                 List<Task> tasks = new List<Task>(AmountToInsert);
-                int counter = 0;
                 foreach (Item item in itemsToInsert)
                 {
-                    if (counter > 5) break;
-                    counter++;
+
+                    //var res = await container.CreateItemAsync(item, new PartitionKey(item.id));
+                    //var ress = await container.CreateItemAsync<Item>(
+                    // item: item,
+                    // partitionKey: new PartitionKey(item.id));
+
                     tasks.Add(container.CreateItemAsync(item, new PartitionKey(item.id))
-                        .ContinueWith(itemResponse =>
-                        {
-                            if (!itemResponse.IsCompletedSuccessfully)
-                            {
-                                AggregateException innerExceptions = itemResponse.Exception.Flatten();
-                                if (innerExceptions.InnerExceptions.FirstOrDefault(innerEx => innerEx is CosmosException) is CosmosException cosmosException)
-                                {
-                                    Console.WriteLine($"Received {cosmosException.StatusCode} ({cosmosException.Message}).");
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"Exception {innerExceptions.InnerExceptions.FirstOrDefault()}.");
-                                }
-                            }
-                        }));
+                       .ContinueWith(itemResponse =>
+                       {
+                           if (!itemResponse.IsCompletedSuccessfully)
+                           {
+                               AggregateException innerExceptions = itemResponse.Exception.Flatten();
+                               if (innerExceptions.InnerExceptions.FirstOrDefault(innerEx => innerEx is CosmosException) is CosmosException cosmosException)
+                               {
+                                   Console.WriteLine($"Received {cosmosException.StatusCode} ({cosmosException.Message}).");
+                               }
+                               else
+                               {
+                                   Console.WriteLine($"Exception {innerExceptions.InnerExceptions.FirstOrDefault()}.");
+                               }
+                           }
+                       }));
+
                 }
 
                 // Wait until all are done
@@ -110,7 +121,7 @@ namespace Microsoft.Azure.Cosmos.Samples.Bulk
             finally
             {
                 Console.WriteLine("Cleaning up resources...");
-                await database.DeleteAsync();
+                // await database.DeleteAsync();//this deletes everything
             }
         }
 
