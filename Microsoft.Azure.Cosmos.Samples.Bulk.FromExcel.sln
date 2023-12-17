@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34407.89
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Azure.Cosmos.Samples.Bulk", "Microsoft.Azure.Cosmos.Samples.Bulk.csproj", "{B641DFA3-8FBB-4BFB-887B-007AF1DFBC38}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Azure.Cosmos.Samples.Bulk.FromExcel", "Microsoft.Azure.Cosmos.Samples.Bulk.FromExcel.csproj", "{B641DFA3-8FBB-4BFB-887B-007AF1DFBC38}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

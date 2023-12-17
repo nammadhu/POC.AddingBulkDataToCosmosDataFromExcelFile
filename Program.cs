@@ -43,17 +43,18 @@ namespace Microsoft.Azure.Cosmos.Samples.Bulk
             // <Initialize>
             Database database = await cosmosClient.CreateDatabaseIfNotExistsAsync(Program.DatabaseName);
 
-            await database.DefineContainer(Program.ContainerName, partitionKey )
-                    .WithIndexingPolicy()
-                        .WithIndexingMode(IndexingMode.Consistent)
-                        .WithIncludedPaths()
-                            .Attach()
-                        .WithExcludedPaths()
-                            .Path("/*")
-                            .Attach()
-                    .Attach()
-                .CreateAsync(50000);
-            
+            if (database.GetContainer(Program.ContainerName) == null)
+                await database.DefineContainer(Program.ContainerName, partitionKey)
+                        .WithIndexingPolicy()
+                            .WithIndexingMode(IndexingMode.Consistent)
+                            .WithIncludedPaths()
+                                .Attach()
+                            .WithExcludedPaths()
+                                .Path("/*")
+                                .Attach()
+                        .Attach()
+                    .CreateAsync(50000);
+
             // </Initialize>
 
             try
@@ -175,10 +176,10 @@ namespace Microsoft.Azure.Cosmos.Samples.Bulk
         // <Model>
         public class Item
         {
-            public string id {get;set;}
-            public string name {get;set;}
+            public string id { get; set; }
+            public string name { get; set; }
 
-            public string price{get;set;}
+            public string price { get; set; }
         }
         // </Model>
     }
